@@ -1,4 +1,4 @@
-﻿namespace PKHeX.Core.Injection
+namespace PKHeX.Core.Injection
 {
     public static class RamOffsets
     {
@@ -18,7 +18,7 @@
                         LiveHeXVersion.SV_v201,
                         LiveHeXVersion.SV_v202,
                         LiveHeXVersion.SV_v300,
-                    ],
+                    ],  LiveHeXVersion.SV_v301
                 SAV8LA
                     =>
                     [
