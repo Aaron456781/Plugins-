@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -69,7 +69,7 @@ namespace PKHeX.Core.Injection
                         LiveHeXVersion.BDSP_v112,
                         LiveHeXVersion.BDSP_v113,
                         LiveHeXVersion.BDSP_v120,
-                        LiveHeXVersion.BD_v130
+                        LiveHeXVersion.BD_v130,
                     }
                 },
                 {
@@ -95,7 +95,7 @@ namespace PKHeX.Core.Injection
                         LiveHeXVersion.SV_v201,
                         LiveHeXVersion.SV_v202,
                         LiveHeXVersion.SV_v300,
-                    }
+                    }.  LiveHeXVersion.SV_v301,
                 },
                 {
                     Violet_ID,
@@ -109,8 +109,8 @@ namespace PKHeX.Core.Injection
                         LiveHeXVersion.SV_v132,
                         LiveHeXVersion.SV_v201,
                         LiveHeXVersion.SV_v202,
-                        LiveHeXVersion.SV_v300
-                    }
+                        LiveHeXVersion.SV_v300,
+                    }.  LiveHeXVersion.SV_v301,
                 },
             };
 
