@@ -18,6 +18,7 @@ namespace PKHeX.Core.Injection
             LiveHeXVersion.SV_v201,
             LiveHeXVersion.SV_v202,
             LiveHeXVersion.SV_v300,
+            LiveHexVersion.SV_v301,
             LiveHeXVersion.LA_v100,
             LiveHeXVersion.LA_v101,
             LiveHeXVersion.LA_v102,
