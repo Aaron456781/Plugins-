@@ -510,6 +510,7 @@ namespace PKHeX.Core.Injection
         public static readonly Dictionary<LiveHeXVersion, BlockData[]> SCBlocks =
             new()
             {
+                { LiveheXVersion.SV_v301, Blocks_SV_V301 },
                 { LiveHeXVersion.SV_v300, Blocks_SV_v300 },
                 { LiveHeXVersion.SV_v202, Blocks_SV_v202 },
                 { LiveHeXVersion.SV_v201, Blocks_SV_v201 },
