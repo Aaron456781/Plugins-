@@ -12,7 +12,9 @@ namespace PKHeX.Core.Injection
         {
             int len = 0;
             foreach (var a in arr)
+            {
                 len += a.Length;
+            }
 
             var result = new T[len];
 
@@ -30,7 +32,10 @@ namespace PKHeX.Core.Injection
         {
             var result = new T[data.Length / size][];
             for (int i = 0; i < data.Length; i += size)
+            {
                 result[i / size] = data.Slice(i, size).ToArray();
+            }
+
             return result;
         }
 
@@ -53,14 +58,22 @@ namespace PKHeX.Core.Injection
             return result;
         }
 
-        internal static T? ToClass<T>(this byte[] bytes) where T : class
+        internal static T? ToClass<T>(this byte[] bytes)
+            where T : class
         {
             var handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-            try { return Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T)) as T; }
-            finally { handle.Free(); }
+            try
+            {
+                return Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T)) as T;
+            }
+            finally
+            {
+                handle.Free();
+            }
         }
 
-        internal static byte[] ToBytesClass<T>(this T obj) where T : class
+        internal static byte[] ToBytesClass<T>(this T obj)
+            where T : class
         {
             int size = Marshal.SizeOf(obj);
             byte[] arr = new byte[size];

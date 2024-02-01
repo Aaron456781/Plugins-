@@ -1,7 +1,7 @@
-﻿using System.Windows.Forms;
-using AutoModPlugins.Properties;
+﻿using AutoModPlugins.Properties;
 using PKHeX.Core;
 using PKHeX.Core.Injection;
+using System.Windows.Forms;
 
 namespace AutoModPlugins
 {
@@ -41,12 +41,16 @@ namespace AutoModPlugins
         public override void NotifySaveLoaded()
         {
             if (SaveFileEditor.SAV is SAV8SWSH)
+            {
                 return;
+            }
 
             // close any windows & connections to force disconnect
             var forms = WinFormsUtil.FormsOfType<LiveHeXUI>();
             foreach (var form in forms)
+            {
                 form.Close();
+            }
         }
     }
 }

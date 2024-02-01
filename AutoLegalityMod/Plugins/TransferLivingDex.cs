@@ -1,35 +1,38 @@
 ﻿using AutoModPlugins.Properties;
-using PKHeX.Core;
 using PKHeX.Core.AutoMod;
+using PKHeX.Core;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace AutoModPlugins
 {
-    public class LivingDex : AutoModPlugin
+    public class TransferLivingDex : AutoModPlugin
     {
-        public override string Name => "Generate Living Dex";
+        public override string Name => "Transfer Living Dex";
+
         public override int Priority => 1;
 
         protected override void AddPluginControl(ToolStripDropDownItem modmenu)
         {
             var ctrl = new ToolStripMenuItem(Name) { Image = Resources.livingdex };
-            ctrl.Click += GenLivingDex;
-            ctrl.Name = "Menu_LivingDex";
+            ctrl.Click += GenTLivingDex;
+            ctrl.Name = "Menu_TransferDex";
             modmenu.DropDownItems.Add(ctrl);
         }
-
-        private void GenLivingDex(object? sender, EventArgs e)
+        private void GenTLivingDex(object? sender, EventArgs e)
         {
-            var prompt = WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Generate a Living Dex?");
+            var prompt = WinFormsUtil.Prompt(MessageBoxButtons.YesNo, $"Generate a Transfer Dex for {_settings.TransferVersion}?");
             if (prompt != DialogResult.Yes)
             {
                 return;
             }
 
             var sav = SaveFileEditor.SAV;
-            Span<PKM> pkms = sav.GenerateLivingDex().ToArray();
+            Span<PKM> pkms = sav.GenerateTLivingDex().ToArray();
             Span<PKM> bd = sav.BoxData.ToArray();
             if (pkms.Length > bd.Length)
             {

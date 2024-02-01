@@ -1,3 +1,7 @@
+using AutoModPlugins.GUI;
+using AutoModPlugins.Properties;
+using PKHeX.Core;
+using PKHeX.Core.AutoMod;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,10 +11,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using AutoModPlugins.GUI;
-using AutoModPlugins.Properties;
-using PKHeX.Core;
-using PKHeX.Core.AutoMod;
 
 namespace AutoModPlugins
 {
@@ -55,18 +55,26 @@ namespace AutoModPlugins
 
             // Match PKHeX Versioning and ALM Settings only on parent plugin
             if (Priority != 0)
+            {
                 return;
+            }
 
             Task.Run(async () =>
-            {
-                var (hasError, error) = await SetUpEnvironment(Source.Token).ConfigureAwait(false);
-                if (hasError && error is not null)
                 {
-                    if (error.InvokeRequired)
-                        error.Invoke(() => ShowAlmErrorDialog(error, menu));
-                    else ShowAlmErrorDialog(error, menu);
-                }
-            }, Source.Token);
+                    var (hasError, error) = await SetUpEnvironment(Source.Token).ConfigureAwait(false);
+                    if (hasError && error is not null)
+                    {
+                        if (error.InvokeRequired)
+                        {
+                            error.Invoke(() => ShowAlmErrorDialog(error, menu));
+                        }
+                        else
+                        {
+                            ShowAlmErrorDialog(error, menu);
+                        }
+                    }
+                },
+                Source.Token);
         }
 
         private static void ShowAlmErrorDialog(ALMError error, ToolStrip menu)
@@ -74,7 +82,14 @@ namespace AutoModPlugins
             SystemSounds.Hand.Play();
             var res = error.ShowDialog(menu);
             if (res == DialogResult.Retry)
-                Process.Start(new ProcessStartInfo { FileName = "https://github.com/architdate/PKHeX-Plugins/wiki/Installing-PKHeX-Plugins#manual-installation-or-installing-older-releases", UseShellExecute = true });
+            {
+                Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "https://github.com/architdate/PKHeX-Plugins/wiki/Installing-PKHeX-Plugins",
+                        UseShellExecute = true
+                    }
+                );
+            }
         }
 
         private async Task<(bool, ALMError?)> SetUpEnvironment(CancellationToken token)
@@ -89,28 +104,42 @@ namespace AutoModPlugins
             // ReSharper disable once SuspiciousTypeConversion.Global
             var form = ((ContainerControl)SaveFileEditor).ParentForm;
             if (form is null)
+            {
                 return;
+            }
 
             // wait for all plugins to be loaded
             while (!form.IsHandleCreated)
+            {
                 await Task.Delay(0_100, token).ConfigureAwait(false);
+            }
 
             if (form.InvokeRequired)
+            {
                 form.Invoke(() => form.TranslateInterface(WinFormsTranslator.CurrentLanguage));
-            else form.TranslateInterface(WinFormsTranslator.CurrentLanguage);
+            }
+            else
+            {
+                form.TranslateInterface(WinFormsTranslator.CurrentLanguage);
+            }
+
             Debug.WriteLine($"{LoggingPrefix} Translated form.");
         }
 
         private static (bool, ALMError?) CheckForMismatch()
         {
             bool mismatch = ALMVersion.GetIsMismatch();
-            bool reset = ALMVersion.Versions.CoreVersionCurrent > new Version(_settings.LatestAllowedVersion);
+            bool reset =ALMVersion.Versions.CoreVersionCurrent > new Version(_settings.LatestAllowedVersion);
             if (reset)
+            {
                 _settings.LatestAllowedVersion = "0.0.0.0";
+            }
 
             _settings.EnableDevMode = _settings.EnableDevMode && !mismatch;
             if (mismatch || reset)
+            {
                 _settings.Save();
+            }
 
             return (mismatch, mismatch ? WinFormsUtil.ALMErrorMismatch(ALMVersion.Versions) : null);
         }
@@ -119,7 +148,10 @@ namespace AutoModPlugins
         {
             var items = menuStrip.Items;
             if (items.Find(ParentMenuParent, false)[0] is not ToolStripDropDownItem tools)
+            {
                 return;
+            }
+
             var toolsitems = tools.DropDownItems;
             var modmenusearch = toolsitems.Find(ParentMenuName, false);
             var modmenu = GetModMenu(tools, modmenusearch);
@@ -129,18 +161,16 @@ namespace AutoModPlugins
         private static ToolStripMenuItem GetModMenu(ToolStripDropDownItem tools, IReadOnlyList<ToolStripItem> search)
         {
             if (search.Count != 0)
+            {
                 return (ToolStripMenuItem)search[0];
+            }
 
             var modmenu = CreateBaseGroupItem();
             tools.DropDownItems.Insert(0, modmenu);
             return modmenu;
         }
 
-        private static ToolStripMenuItem CreateBaseGroupItem() => new(ParentMenuText)
-        {
-            Image = Resources.menuautolegality,
-            Name = ParentMenuName,
-        };
+        private static ToolStripMenuItem CreateBaseGroupItem() => new(ParentMenuText) { Image = Resources.menuautolegality, Name = ParentMenuName, };
 
         protected abstract void AddPluginControl(ToolStripDropDownItem modmenu);
 

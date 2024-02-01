@@ -17,7 +17,23 @@ namespace PKHeX.Core.Enhancements
         public static bool IsTeamBackup(string paste) => paste.StartsWith("===");
 
         // TODO: Update form list with possibly invalid Calyrex forms (non battle)??
-        private static string[] InvalidFormes => new[] { "Primal", "Busted", "Crowned", "Noice", "Gulping", "Gorging", "Zen", "Galar-Zen", "Hangry", "Complete" };
+        private static string[] InvalidFormes =>
+            new[]
+            {
+                "Primal",
+                "Busted",
+                "Crowned",
+                "Noice",
+                "Gulping",
+                "Gorging",
+                "Zen",
+                "Galar-Zen",
+                "Hangry",
+                "Complete"
+            };
+
+        private static readonly string[] separator = ["\n"];
+
         public static bool IsInvalidForm(string form) => form.Contains("Mega") || InvalidFormes.Contains(form);
 
         /// <summary>
@@ -29,8 +45,11 @@ namespace PKHeX.Core.Enhancements
         {
             paste = paste.Trim(); // Remove White Spaces
             if (IsTeamBackup(paste))
+            {
                 return ShowdownTeamSet.GetTeams(paste).SelectMany(z => z.Team).ToList();
-            var lines = paste.Split(new[] { "\n" }, StringSplitOptions.None);
+            }
+
+            var lines = paste.Split(separator, StringSplitOptions.None);
             return ShowdownParsing.GetShowdownSets(lines).ToList();
         }
 
@@ -43,8 +62,11 @@ namespace PKHeX.Core.Enhancements
         {
             source = source.Trim();
             if (IsTeamBackup(source))
+            {
                 return true;
-            string[] stringSeparators = { "\n\r" };
+            }
+
+            string[] stringSeparators = ["\n\r"];
 
             var result = source.Split(stringSeparators, StringSplitOptions.None);
             return new ShowdownSet(result[0]).Species > 0;

@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PKHeX.Core.Enhancements
@@ -21,6 +20,7 @@ namespace PKHeX.Core.Enhancements
             var stream = GetStreamFromURL(address);
             return GetStringResponse(stream);
         }
+
         private static Stream GetStreamFromURL(string url)
         {
             using var client = new HttpClient();
@@ -48,26 +48,20 @@ namespace PKHeX.Core.Enhancements
         private static string GetStringResponse(Stream? dataStream)
         {
             if (dataStream == null)
+            {
                 return string.Empty;
+            }
+
             using var reader = new StreamReader(dataStream);
             return reader.ReadToEnd();
-        }
-
-        private static byte[]? GetByteResponse(Stream? dataStream)
-        {
-            if (dataStream == null)
-                return null;
-            MemoryStream ms = new();
-            dataStream.CopyTo(ms);
-            return ms.ToArray();
         }
 
         /// <summary>
         /// GPSS upload function. POST request using multipart form-data
         /// </summary>
         /// <param name="data">pkm data in bytes.</param>
-        /// <param name="Url">location to fetch from</param>
         /// <param name="generation">The generation for the game the pokemon is being uploaded from.</param>
+        /// <param name="Url">location to fetch from</param>
         /// <returns></returns>
         public async static Task<HttpResponseMessage> GPSSPost(byte[] data, int generation, string Url = "flagbrew.org")
         {
@@ -96,7 +90,10 @@ namespace PKHeX.Core.Enhancements
             // code is returned as a long
             var json = DownloadString($"https://{Url}/api/v2/gpss/download/pokemon/{code}");
             if (!json.Contains("\"pokemon\":\""))
+            {
                 return null;
+            }
+
             var b64 = json.Split("\"pokemon\":\"")[1].Split("\"")[0];
             return System.Convert.FromBase64String(b64);
         }

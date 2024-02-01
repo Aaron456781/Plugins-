@@ -1,7 +1,7 @@
-﻿using System.IO;
-using System.Windows.Forms;
-using AutoModPlugins.Properties;
+﻿using AutoModPlugins.Properties;
 using PKHeX.Core.Enhancements;
+using System.IO;
+using System.Windows.Forms;
 
 namespace AutoModPlugins
 {
@@ -14,10 +14,16 @@ namespace AutoModPlugins
         {
             var ctrl = new ToolStripMenuItem(Name) { Name = "Menu_PKSMBank" };
 
-            var c1 = new ToolStripMenuItem("Merge PKM into PKSM Bank") { Image = Resources.uploadgpss };
+            var c1 = new ToolStripMenuItem("Merge PKM into PKSM Bank")
+            {
+                Image = Resources.uploadgpss
+            };
             c1.Click += (_, _) => Import();
             c1.Name = "Menu_CreatePKSMBank";
-            var c2 = new ToolStripMenuItem("Split PKSM Bank into PKM") { Image = Resources.mgdbdownload };
+            var c2 = new ToolStripMenuItem("Split PKSM Bank into PKM")
+            {
+                Image = Resources.mgdbdownload
+            };
             c2.Click += (_, _) => Export();
             c2.Name = "Menu_ExportPKSMBank";
 
@@ -31,12 +37,17 @@ namespace AutoModPlugins
         private static void Export()
         {
             if (!WinFormsUtil.OpenSAVPKMDialog(new[] { ".bnk" }, out var path))
+            {
                 return;
+            }
 
             var bank = File.ReadAllBytes(path!);
             using var fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() != DialogResult.OK)
+            {
                 return;
+            }
+
             var count = PKSMUtil.ExportBank(bank, fbd.SelectedPath, out var previews);
             PKMPreview.ExportCSV(previews, fbd.SelectedPath);
             WinFormsUtil.Alert("Bank Exported!", $"Dumped {count} Pokémon!");
@@ -46,7 +57,10 @@ namespace AutoModPlugins
         {
             using var fbd = new FolderBrowserDialog();
             if (fbd.ShowDialog() != DialogResult.OK)
+            {
                 return;
+            }
+
             var count = PKSMUtil.CreateBank(fbd.SelectedPath);
             WinFormsUtil.Alert("Bank Created!", $"Added {count} Pokémon to the bank!");
         }

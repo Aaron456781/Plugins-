@@ -1,11 +1,11 @@
-﻿using System;
+﻿using FluentAssertions;
+using PKHeX.Core;
+using PKHeX.Core.AutoMod;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using FluentAssertions;
-using PKHeX.Core;
-using PKHeX.Core.AutoMod;
 using Xunit;
 using static PKHeX.Core.GameVersion;
 
@@ -17,6 +17,7 @@ namespace AutoModTests
     public static class TeamTests
     {
         static TeamTests() => TestUtil.InitializePKHeXEnvironment();
+
         private static string TestPath => TestUtil.GetTestFolder("ShowdownSets");
         private static string LogDirectory => Path.Combine(Directory.GetCurrentDirectory(), "logs");
 
@@ -43,26 +44,37 @@ namespace AutoModTests
                     var noMoves = lines.Where(z => !z.StartsWith("- "));
 
                     // Giratina Origin from PLA has no item so will fail in BDSP
-                    setsTransfer = ShowdownParsing.GetShowdownSets(noMoves).Where(z => !(z.Species == (ushort)Species.Giratina && z.Form == 1)).ToList();
+                    setsTransfer = ShowdownParsing
+                        .GetShowdownSets(noMoves)
+                        .Where(z => !(z.Species == (ushort)Species.Giratina && z.Form == 1))
+                        .ToList();
                 }
 
                 // Filter sets based on if they are present in destination game
-                var filter = !paTransfer ? sets.Distinct(new ShowdownSetComparator()).Where(z => sav.Personal.IsPresentInGame(z.Species, z.Form))
-                                         : setsTransfer.Distinct(new ShowdownSetComparator()).Where(z => sav.Personal.IsPresentInGame(z.Species, z.Form));
+                var filter = !paTransfer
+                    ? sets.Distinct(new ShowdownSetComparator())
+                        .Where(z => sav.Personal.IsPresentInGame(z.Species, z.Form))
+                    : setsTransfer
+                        .Distinct(new ShowdownSetComparator())
+                        .Where(z => sav.Personal.IsPresentInGame(z.Species, z.Form));
 
                 sets = filter.ToList();
                 for (int i = 0; i < sets.Count; i++)
                 {
                     var set = sets[i];
                     if (set.Species <= 0)
+                    {
                         continue;
+                    }
 
                     try
                     {
-                        Debug.Write($"Checking Set {i:000} [Species: {(Species)set.Species}] from File {file} using Save {s}: ");
+                        Debug.Write(
+                            $"Checking Set {i:000} [Species: {(Species)set.Species}] from File {file} using Save {s}: "
+                        );
                         var regen = new RegenTemplate(set, sav.Generation);
-                        var pk = sav.GetLegalFromSet(regen, out _);
-                        var la = new LegalityAnalysis(pk);
+                        var almres = sav.GetLegalFromSet(regen);
+                        var la = new LegalityAnalysis(almres.Created);
                         if (la.Valid)
                         {
                             Debug.WriteLine("Valid");
@@ -71,15 +83,23 @@ namespace AutoModTests
                         else
                         {
                             illegalsets.Add(regen);
-                            Debug.WriteLine($"Invalid Set for {(Species)set.Species} in file {file} with set: {set.Text}");
+                            Debug.WriteLine(
+                                $"Invalid Set for {(Species)set.Species} in file {file} with set: {regen.Text}"
+                            );
                         }
                     }
                     catch
                     {
-                        Debug.WriteLine($"Exception for {(Species)set.Species} in file {file} with set: {set.Text}");
+                        Debug.WriteLine(
+                            $"Exception for {(Species)set.Species} in file {file} with set: {set.Text}"
+                        );
                     }
                 }
-                results[s] = new Dictionary<string, RegenTemplate[]> { { "legal", legalsets.ToArray() }, { "illegal", illegalsets.ToArray() } };
+                results[s] = new Dictionary<string, RegenTemplate[]>
+                {
+                    { "legal", legalsets.ToArray() },
+                    { "illegal", illegalsets.ToArray() }
+                };
             }
             return results;
         }
@@ -100,7 +120,6 @@ namespace AutoModTests
         [InlineData(AnubisTPK7, new[] { SW, US })]
         [InlineData(AnubisTPK8, new[] { SW })]
         [InlineData(AnubisVCPK7, new[] { SW, US })]
-
         [InlineData(RoCPA8, new[] { PLA, BD })]
         [InlineData(RoCPB7, new[] { SW, GP })]
         [InlineData(RoCPB8, new[] { BD })]
@@ -114,11 +133,12 @@ namespace AutoModTests
         [InlineData(RoCPK8, new[] { SW })]
         [InlineData(RoCPK9, new[] { SL })]
         [InlineData(RoCNTPK1, new[] { RD })]
+        [InlineData(RoCNTPK3, new[] { E })]
         [InlineData(RoCNTPK4, new[] { Pt })]
+        [InlineData(RoCNTPK5, new[] { B2, B })]
         [InlineData(RoCNTPK6, new[] { OR })]
         [InlineData(RoCNTPK7, new[] { US })]
         [InlineData(RoCVCPK7, new[] { SW, US })]
-
         [InlineData(UnderlevelPK1, new[] { RD, C })]
         [InlineData(UnderlevelPK2, new[] { C })]
         [InlineData(UnderlevelPK3, new[] { SW, US, SN, OR, X, B2, B, Pt, E })]
@@ -145,15 +165,23 @@ namespace AutoModTests
             {
                 var illegalcount = sets["illegal"].Length;
                 if (illegalcount == 0)
+                {
                     continue;
+                }
+
                 testfailed = true;
-                msg += $"GameVersion {gv} : Illegal: {illegalcount} | Legal: {sets["legal"].Length}\n";
+                msg +=
+                    $"GameVersion {gv} : Illegal: {illegalcount} | Legal: {sets["legal"].Length}\n";
                 error += $"\n\n=============== GameVersion: {gv} ===============\n\n";
                 error += string.Join("\n\n", sets["illegal"].Select(x => x.Text));
             }
-            var fileName = $"{Path.GetFileName(path).Replace('.', '_')}{DateTime.Now:_yyyy-MM-dd-HH-mm-ss}.log";
+            var fileName =
+                $"{Path.GetFileName(path).Replace('.', '_')}{DateTime.Now:_yyyy-MM-dd-HH-mm-ss}.log";
             if (error.Trim().Length > 0)
+            {
                 File.WriteAllText(Path.Combine(LogDirectory, fileName), error);
+            }
+
             testfailed.Should().BeFalse(msg);
         }
 
@@ -188,7 +216,9 @@ namespace AutoModTests
         private const string RoCPK8 = "RoCs-PC Tests/RoC - pk8.txt";
         private const string RoCPK9 = "RoCs-PC Tests/RoC - pk9.txt";
         private const string RoCNTPK1 = "RoCs-PC Tests/RoC notransfer - pk1.txt";
+        private const string RoCNTPK3 = "RoCs-PC Tests/RoC notransfer - pk3.txt";
         private const string RoCNTPK4 = "RoCs-PC Tests/RoC notransfer - pk4.txt";
+        private const string RoCNTPK5 = "RoCs-PC Tests/RoC notransfer - pk5.txt";
         private const string RoCNTPK6 = "RoCs-PC Tests/RoC notransfer - pk6.txt";
         private const string RoCNTPK7 = "RoCs-PC Tests/RoC notransfer - pk7.txt";
         private const string RoCVCPK7 = "RoCs-PC Tests/RoC VC - pk7.txt";
@@ -209,9 +239,7 @@ namespace AutoModTests
     {
         public bool Equals(ShowdownSet? x, ShowdownSet? y)
         {
-            if (x == null || y == null)
-                return false;
-            return x.Text.Trim() == y.Text.Trim();
+            return x != null && y != null && x.Text.Trim() == y.Text.Trim();
         }
 
         public int GetHashCode(ShowdownSet obj) => obj.Text.GetHashCode();

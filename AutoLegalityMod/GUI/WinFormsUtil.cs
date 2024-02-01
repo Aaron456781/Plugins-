@@ -1,10 +1,10 @@
-using AutoModPlugins.GUI;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Media;
 using System.Windows.Forms;
+using AutoModPlugins.GUI;
 using static PKHeX.Core.AutoMod.ALMVersion;
 
 namespace AutoModPlugins
@@ -40,18 +40,19 @@ namespace AutoModPlugins
         public static ALMError ALMErrorMismatch(AssemblyVersions versions)
         {
             // ReSharper disable once SuspiciousTypeConversion.Global
-            var msg = "Version mismatch between ALM and PKHeX.\n\n" +
-                     $"Current ALM version: {versions.AlmVersionCurrent}\n" +
-                     $"Current PKHeX version: {versions.CoreVersionCurrent}\n\n" +
-                      "Click the \"Wiki\" button to learn how to fix this error.";
+            var msg =
+                "Version mismatch between ALM and PKHeX.\n\n"
+                + $"Current ALM version: {versions.AlmVersionCurrent}\n"
+                + $"Current PKHeX version: {versions.CoreVersionCurrent}\n\n"
+                + "Click the \"Wiki\" button to learn how to fix this error.";
 
-            return new ALMError(msg, new[] { "Wiki", "Cancel" });
+            return new ALMError(msg, ["Wiki", "Cancel"]);
         }
 
         public static ALMError ALMErrorBasic(string msg, bool updateButton = false)
         {
             SystemSounds.Hand.Play();
-            return new ALMError(msg, new[] { updateButton ? "Update" : "Wiki", "Cancel" });
+            return new ALMError(msg, [updateButton ? "Update" : "Wiki", "Cancel"]);
         }
 
         /// <summary>
@@ -65,12 +66,14 @@ namespace AutoModPlugins
             string supported = string.Join(";", Extensions.Select(s => $"*.{s}").Concat(new[] { "*.pkm" }));
             using var ofd = new OpenFileDialog
             {
-                Filter = "All Files|*.*" +
-                         $"|Supported Files (*.*)|main;*.bin;{supported};*.bak" +
-                         "|Save Files (*.sav)|main" +
-                         "|Decrypted PKM File (*.pkm)|" + supported +
-                         "|Binary File|*.bin" +
-                         "|Backup File|*.bak",
+                Filter =
+                    "All Files|*.*"
+                    + $"|Supported Files (*.*)|main;*.bin;{supported};*.bak"
+                    + "|Save Files (*.sav)|main"
+                    + "|Decrypted PKM File (*.pkm)|"
+                    + supported
+                    + "|Binary File|*.bin"
+                    + "|Backup File|*.bak",
             };
             if (ofd.ShowDialog() != DialogResult.OK)
             {
@@ -89,7 +92,10 @@ namespace AutoModPlugins
             child.Location = new Point(Math.Max(x, 0), Math.Max(y, 0));
         }
 
-        public static T? FirstFormOfType<T>() where T : Form => FormsOfType<T>().FirstOrDefault();
-        public static IEnumerable<T> FormsOfType<T>() where T : Form => Application.OpenForms.OfType<T>();
+        public static T? FirstFormOfType<T>()
+            where T : Form => FormsOfType<T>().FirstOrDefault();
+
+        public static IEnumerable<T> FormsOfType<T>()
+            where T : Form => Application.OpenForms.OfType<T>();
     }
 }

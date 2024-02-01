@@ -1,9 +1,9 @@
-﻿using System;
+﻿using AutoModPlugins.Properties;
+using PKHeX.Core;
+using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Forms;
-using AutoModPlugins.Properties;
-using PKHeX.Core;
 
 namespace AutoModPlugins
 {
@@ -15,9 +15,16 @@ namespace AutoModPlugins
 
         protected override void AddPluginControl(ToolStripDropDownItem modmenu)
         {
-            var ctrl = new ToolStripMenuItem(Name) {Name = "Menu_GPSSPlugin", Image = Resources.flagbrew};
-            var c1 = new ToolStripMenuItem("Upload to GPSS") {Image = Resources.uploadgpss};
-            var c2 = new ToolStripMenuItem("Import from GPSS URL") {Image = Resources.mgdbdownload};
+            var ctrl = new ToolStripMenuItem(Name)
+            {
+                Name = "Menu_GPSSPlugin",
+                Image = Resources.flagbrew
+            };
+            var c1 = new ToolStripMenuItem("Upload to GPSS") { Image = Resources.uploadgpss };
+            var c2 = new ToolStripMenuItem("Import from GPSS URL")
+            {
+                Image = Resources.mgdbdownload
+            };
             c1.Click += GPSSUpload;
             c1.Name = "Menu_UploadtoGPSS";
             c2.Click += GPSSDownload;
@@ -34,12 +41,18 @@ namespace AutoModPlugins
             byte[] rawdata = pk.Data;
             try
             {
-                var response = await PKHeX.Core.Enhancements.NetUtil.GPSSPost(rawdata, SaveFileEditor.SAV.Generation, Url);
+                var response = await PKHeX.Core.Enhancements.NetUtil.GPSSPost(
+                    rawdata,
+                    SaveFileEditor.SAV.Generation,
+                    Url
+                );
 
                 var content = await response.Content.ReadAsStringAsync();
                 var decoded = JsonSerializer.Deserialize<JsonNode>(content);
                 if (decoded == null)
+                {
                     return;
+                }
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
                 var error = decoded["error"] == null ? null : (string)decoded["error"];
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
@@ -70,21 +83,23 @@ namespace AutoModPlugins
                         msg = $"Pokemon added to the GPSS database. Here is your URL (has been copied to the clipboard):\n https://{Url}/gpss/{decoded["code"]}";
                         copyToClipboard = true;
                     }
-                } else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     msg = "Uploading to GPSS is currently disabled, please try again later, or check the FlagBrew discord for more information.";
-                } else
+                }
+                else
                 {
                     msg = $"Uploading to GPSS returned an unexpected status code {response.StatusCode}\nError details (if any returned from server): {error}";
                 }
-                
 
                 if (copyToClipboard)
                 {
                     Clipboard.SetText($"https://{Url}/gpss/{decoded["code"]}");
                 }
                 WinFormsUtil.Alert(msg);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 WinFormsUtil.Alert($"Something went wrong uploading to GPSS.\nError details: {ex.Message}");
             }
@@ -127,7 +142,10 @@ namespace AutoModPlugins
         {
             var result = EntityConverter.ConvertToType(pk, SaveFileEditor.SAV.PKMType, out _);
             if (result == null)
+            {
                 return false;
+            }
+
             PKMEditor.PopulateFields(result);
             return true;
         }

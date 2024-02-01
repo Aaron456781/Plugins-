@@ -1,8 +1,8 @@
-﻿using System;
+﻿using AutoModPlugins.Properties;
+using PKHeX.Core.Enhancements;
+using System;
 using System.IO;
 using System.Windows.Forms;
-using AutoModPlugins.Properties;
-using PKHeX.Core.Enhancements;
 
 namespace AutoModPlugins
 {
@@ -28,7 +28,9 @@ namespace AutoModPlugins
             ToolStripItem parent = modmenu.OwnerItem;
             var form = (parent.GetCurrentParent().Parent ?? throw new Exception("Parent not found")).FindForm();
             if (form is not null)
+            {
                 form.Icon = Resources.icon;
+            }
 
             ShowdownSetLoader.PKMEditor = PKMEditor;
             ShowdownSetLoader.SaveFileEditor = SaveFileEditor;
@@ -39,7 +41,10 @@ namespace AutoModPlugins
             // Check for showdown data in clipboard
             var text = GetTextShowdownData();
             if (string.IsNullOrWhiteSpace(text))
+            {
                 return;
+            }
+
             ShowdownSetLoader.Import(text!);
         }
 
@@ -54,7 +59,9 @@ namespace AutoModPlugins
             {
                 var txt = Clipboard.GetText();
                 if (ShowdownUtil.IsTextShowdownData(txt))
+                {
                     return txt;
+                }
             }
 
             if (!WinFormsUtil.OpenSAVPKMDialog(new[] { "txt" }, out var path))
@@ -71,7 +78,9 @@ namespace AutoModPlugins
 
             var text = File.ReadAllText(path).TrimEnd();
             if (ShowdownUtil.IsTextShowdownData(text))
+            {
                 return text;
+            }
 
             WinFormsUtil.Alert("Text file with invalid data provided. Please provide a text file with proper Showdown data");
             return null;

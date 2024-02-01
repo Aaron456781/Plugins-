@@ -8,53 +8,29 @@ using System.Threading;
 
 namespace PKHeX.Core.Injection
 {
-    public class ReadMemRequest
+    public class ReadMemRequest(bool callback = true, string? fn = null)
     {
-        public readonly string? FileName;
-        public readonly bool IsCallback;
-
-        public ReadMemRequest(bool callback = true, string? fn = null)
-        {
-            FileName = fn;
-            IsCallback = callback;
-        }
+        public readonly string? FileName = fn;
+        public readonly bool IsCallback = callback;
     }
 
-    public class DataReadyWaiting
+    public class DataReadyWaiting(byte[] data, DataReadyWaiting.DataHandler handler, object? arguments)
     {
-        public readonly byte[] Data;
-        public object? Arguments;
+        public readonly byte[] Data = data;
+        public object? Arguments = arguments;
         public delegate void DataHandler(object dataArguments);
-        public readonly DataHandler Handler;
-
-        public DataReadyWaiting(byte[] data, DataHandler handler, object? arguments)
-        {
-            Data = data;
-            Handler = handler;
-            Arguments = arguments;
-        }
+        public readonly DataHandler Handler = handler;
     }
 
-    public class DataReadyEventArgs : EventArgs
+    public class DataReadyEventArgs(uint seq, byte[] data) : EventArgs
     {
-        public readonly uint Seq;
-        public readonly byte[] Data;
-
-        public DataReadyEventArgs(uint seq, byte[] data)
-        {
-            Seq = seq;
-            Data = data;
-        }
+        public readonly uint Seq = seq;
+        public readonly byte[] Data = data;
     }
 
-    public class InfoReadyEventArgs : EventArgs
+    public class InfoReadyEventArgs(string info) : EventArgs
     {
-        public readonly string Info;
-
-        public InfoReadyEventArgs(string info)
-        {
-            Info = info;
-        }
+        public readonly string Info = info;
     }
 
     public sealed class NTR
@@ -77,8 +53,8 @@ namespace PKHeX.Core.Injection
         public event EventHandler Connected = null!;
         public event EventHandler<InfoReadyEventArgs> InfoReady = null!;
 
-        private readonly Dictionary<uint, DataReadyWaiting> _waitingForData = new();
-        private readonly Dictionary<uint, ReadMemRequest> _pendingReadMem = new();
+        private readonly Dictionary<uint, DataReadyWaiting> _waitingForData = [];
+        private readonly Dictionary<uint, ReadMemRequest> _pendingReadMem = [];
 
         private delegate void LogDelegate(string l);
         private readonly LogDelegate _delLastLog;
@@ -96,14 +72,22 @@ namespace PKHeX.Core.Injection
         }
 
         private void LastLog(string l) => Lastlog = l;
+
         private void OnDataReady(DataReadyEventArgs e) => DataReady.Invoke(this, e);
+
         private void OnConnected(EventArgs e) => Connected.Invoke(this, e);
+
         private void OnInfoReady(InfoReadyEventArgs e) => InfoReady.Invoke(this, e);
+
         private static string ByteToHex(byte[] datBuf) => datBuf.Aggregate("", (current, b) => current + (b.ToString("X2") + " "));
+
         public void AddWaitingForData(uint newkey, DataReadyWaiting newvalue) => _waitingForData.Add(newkey, newvalue);
+
         public void ListProcess() => SendEmptyPacket(5);
+
         public uint Data(uint addr, uint size = 0x100, int pid = -1) => SendReadMemPacket(addr, size, (uint)pid);
-        public void Write(uint addr, byte[] buf, int pid = -1) => SendWriteMemPacket(addr, (uint)pid, buf);
+
+        public void Write(uint addr, ReadOnlySpan<byte> buf, int pid = -1) => SendWriteMemPacket(addr, (uint)pid, buf);
 
         public void Connect(string host, int port)
         {
@@ -118,10 +102,12 @@ namespace PKHeX.Core.Injection
             {
                 var len = stream.Read(buf, index, length - index);
                 if (len == 0)
+                {
                     return 0;
+                }
+
                 index += len;
-            }
-            while (index < length);
+            } while (index < length);
             return length;
         }
 
@@ -132,11 +118,13 @@ namespace PKHeX.Core.Injection
             {
                 Thread.Sleep(1000);
                 if (!IsConnected)
+                {
                     continue;
+                }
+
                 SendHeartbeatPacket();
                 hbstarted = true;
-            }
-            while (!hbstarted || IsConnected);
+            } while (!hbstarted || IsConnected);
         }
 
         private void PacketRecvThreadStart()
@@ -151,11 +139,13 @@ namespace PKHeX.Core.Injection
                 {
                     var ret = ReadNetworkStream(stream, buf, buf.Length);
                     if (ret == 0)
+                    {
                         break;
+                    }
 
                     var magic = BitConverter.ToUInt32(buf, 0);
                     var seq = BitConverter.ToUInt32(buf, 4);
-                    //var type = BitConverter.ToUInt32(buf, 8);
+
                     var cmd = BitConverter.ToUInt32(buf, 12);
                     var t = 12;
                     for (var i = 0; i < args.Length; i++)
@@ -165,7 +155,9 @@ namespace PKHeX.Core.Injection
                     }
                     var dataLen = BitConverter.ToUInt32(buf, t + 4);
                     if (cmd != 0)
+                    {
                         Log($"packet: cmd = {cmd}, dataLen = {dataLen}");
+                    }
 
                     if (magic != 0x12345678)
                     {
@@ -226,7 +218,7 @@ namespace PKHeX.Core.Injection
             }
             else if (requestDetails.IsCallback)
             {
-                //Copies the data, truncates if necessary
+                // Copies the data, truncates if necessary
                 var dataBufCopy = new byte[dataBuf.Length];
                 dataBuf.CopyTo(dataBufCopy, 0);
                 var e = new DataReadyEventArgs(seq, dataBufCopy);
@@ -240,7 +232,10 @@ namespace PKHeX.Core.Injection
 
         private void HandlePacket(uint cmd, uint seq, byte[] dataBuf)
         {
-            if (cmd == 9) HandleReadMem(seq, dataBuf);
+            if (cmd == 9)
+            {
+                HandleReadMem(seq, dataBuf);
+            }
         }
 
         private void SetServer(string serverHost, int serverPort)
@@ -252,7 +247,10 @@ namespace PKHeX.Core.Injection
         private void ConnectToServer()
         {
             if (_tcp != null)
+            {
                 Disconnect();
+            }
+
             try
             {
                 _tcp = new TcpClient { NoDelay = true };
@@ -293,7 +291,7 @@ namespace PKHeX.Core.Injection
             IsConnected = false;
         }
 
-        private void SendPacket(uint type, uint cmd, IReadOnlyList<uint>? args, uint dataLen)
+        private void SendPacket(uint type, uint cmd, Span<uint> args, uint dataLen)
         {
             _currentSeq += 1000;
             var buf = new byte[84];
@@ -306,8 +304,10 @@ namespace PKHeX.Core.Injection
             {
                 t += 4;
                 uint arg = 0;
-                if (args != null)
+                if (args.Length != 0)
                     arg = args[i];
+                
+
                 BitConverter.GetBytes(arg).CopyTo(buf, t);
             }
             BitConverter.GetBytes(dataLen).CopyTo(buf, t + 4);
@@ -322,15 +322,15 @@ namespace PKHeX.Core.Injection
             return _currentSeq;
         }
 
-        private void SendWriteMemPacket(uint addr, uint pid, byte[] buf)
+        private void SendWriteMemPacket(uint addr, uint pid, ReadOnlySpan<byte> buf)
         {
-            uint[] args = new uint[16];
+            Span<uint> args = stackalloc uint[16];
             args[0] = pid;
             args[1] = addr;
             args[2] = (uint)buf.Length;
             SendPacket(1, 10, args, args[2]);
             var stream = _netStream ?? throw new ArgumentNullException(nameof(_netStream));
-            stream.Write(buf, 0, buf.Length);
+            stream.Write(buf);
         }
 
         private void SendHeartbeatPacket()
@@ -372,11 +372,25 @@ namespace PKHeX.Core.Injection
 
         private void GetGame(object? sender, InfoReadyEventArgs e)
         {
-            var pnamestr = new[] { "kujira-1", "kujira-2", "sango-1", "sango-2", "salmon", "niji_loc", "niji_loc", "momiji", "momiji" };
+            var pnamestr = new[]
+            {
+                "kujira-1",
+                "kujira-2",
+                "sango-1",
+                "sango-2",
+                "salmon",
+                "niji_loc",
+                "niji_loc",
+                "momiji",
+                "momiji"
+            };
             string? pname;
             string log = e.Info;
             if ((pname = Array.Find(pnamestr, log.Contains)) == null)
+            {
                 return;
+            }
+
             pname = ", pname:" + pname.PadLeft(9);
             string pidaddr = log.Substring(log.IndexOf(pname, StringComparison.Ordinal) - 10, 10);
             PID = Convert.ToInt32(pidaddr, 16);

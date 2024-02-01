@@ -1,8 +1,8 @@
-﻿using System;
-using System.Windows.Forms;
-using AutoModPlugins.Properties;
+﻿using AutoModPlugins.Properties;
 using PKHeX.Core;
 using PKHeX.Core.AutoMod;
+using System;
+using System.Windows.Forms;
 
 namespace AutoModPlugins
 {
@@ -25,7 +25,10 @@ namespace AutoModPlugins
             {
                 var str = provider.GetRegenSetsFromBoxCurrent();
                 if (string.IsNullOrWhiteSpace(str))
+                {
                     return;
+                }
+
                 Clipboard.SetText(str);
                 WinFormsUtil.Alert("Exported the active box in RegenTemplate format to clipboard.");
             }

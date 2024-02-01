@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -9,26 +10,26 @@ using static PKHeX.Core.GameVersion;
 
 namespace AutoModTests
 {
-    public static class LivingDexTests
+    public static class TransferDexTests
     {
-        static LivingDexTests() => TestUtil.InitializePKHeXEnvironment();
+        static TransferDexTests() => TestUtil.InitializePKHeXEnvironment();
 
         private static readonly GameVersion[] GetGameVersionsToTest =
         [
-            SL,
-            BD,
-            PLA,
-            SW,
-            US,
-            SN,
-            OR,
-            X,
-            B2,
-            B,
-            Pt,
-            E,
+            RD,
             C,
-            RD
+            E,
+            Pt,
+            B,
+            B2,
+            X,
+            OR,
+            SN,
+            US,
+            SW,
+            PLA,
+            BD,
+            SL,
         ];
 
         private static GenerateResult SingleSaveTest(this GameVersion s, LivingDexConfig cfg)
@@ -39,7 +40,7 @@ namespace AutoModTests
             var expected = sav.GetExpectedDexCount(cfg);
             expected.Should().NotBe(0);
 
-            var pkms = sav.GenerateLivingDex(cfg).ToArray();
+            var pkms = sav.GenerateTLivingDex(cfg).ToArray();
             var genned = pkms.Length;
             var val = new GenerateResult(genned == expected, expected, genned);
             return val;
@@ -68,28 +69,27 @@ namespace AutoModTests
             };
             foreach (var ver in GetGameVersionsToTest)
             {
-                foreach (var cf in cfgs)
+                for (int i = Array.IndexOf(GetGameVersionsToTest, ver)+1; i < GetGameVersionsToTest.Length; i++)
                 {
-                    yield return new object[] { ver, cf };
+                    foreach (var cf in cfgs)
+                    {
+                        yield return new object[] { ver, cf, GetGameVersionsToTest[i] };
+                    }
                 }
             }
         }
 
         [Theory]
         [MemberData(nameof(GetLivingDexTestData))]
-        public static void VerifyDex(GameVersion game, LivingDexConfig cfg)
+        public static void VerifyDex(GameVersion game, LivingDexConfig cfg, GameVersion dest)
         {
             APILegality.Timeout = 99999;
             Legalizer.EnableEasterEggs = false;
             APILegality.SetAllLegalRibbons = false;
             APILegality.EnableDevMode = true;
-
+            cfg.TransferVersion = dest;
             var res = game.SingleSaveTest(cfg);
-            res.Success
-                .Should()
-                .BeTrue(
-                    $"GameVersion: {game}\n{cfg}\nExpected: {res.Expected}\nGenerated: {res.Generated}"
-                );
+            res.Success.Should().BeTrue($"GameVersion: {game}\n{cfg}\nExpected: {res.Expected}\nGenerated: {res.Generated}");
         }
 
         private readonly record struct GenerateResult(bool Success, int Expected, int Generated);
@@ -99,6 +99,7 @@ namespace AutoModTests
         {
             Dictionary<ushort, List<byte>> speciesDict = [];
             var personal = sav.Personal;
+            var destpersonal = SaveUtil.GetBlankSAV(cfg.TransferVersion, "ALM");
             var species = Enumerable.Range(1, sav.MaxSpeciesID).Select(x => (ushort)x);
             foreach (ushort s in species)
             {
@@ -117,19 +118,12 @@ namespace AutoModTests
 
                 for (byte f = 0; f < formCount; f++)
                 {
-                    if (!personal.IsPresentInGame(s, f) || FormInfo.IsFusedForm(s, f, sav.Generation) || FormInfo.IsBattleOnlyForm(s, f, sav.Generation) || (FormInfo.IsTotemForm(s, f) && sav.Context is not EntityContext.Gen7) || FormInfo.IsLordForm(s, f, sav.Context))
+                    if (!destpersonal.Personal.IsPresentInGame(s, f) || FormInfo.IsFusedForm(s, f, sav.Generation) || FormInfo.IsBattleOnlyForm(s, f, sav.Generation) || (FormInfo.IsTotemForm(s, f) && sav.Context is not EntityContext.Gen7) || FormInfo.IsLordForm(s, f, sav.Context))
                     {
                         continue;
                     }
 
-                    var valid = sav.GetRandomEncounter(
-                        s,
-                        f,
-                        cfg.SetShiny,
-                        cfg.SetAlpha,
-                        cfg.NativeOnly,
-                        out PKM? pk
-                    );
+                    var valid = sav.GetRandomEncounter(s, f, cfg.SetShiny, cfg.SetAlpha, cfg.NativeOnly, out PKM? pk);
                     if (pk is not null && valid && pk.Form == f && !forms.Contains(f))
                     {
                         forms.Add(f);

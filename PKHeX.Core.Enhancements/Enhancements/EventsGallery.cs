@@ -16,7 +16,7 @@ namespace PKHeX.Core.Enhancements
         public static string GetMGDBDownloadURL()
         {
             var json_data = NetUtil.DownloadString(RepoReleaseURL);
-            return json_data.Split(new[] { "browser_download_url" }, StringSplitOptions.None)[1][3..].Split('"')[0];
+            return json_data.Split(new[] { "browser_download_url" }, StringSplitOptions.None)[1][ 3..].Split('"')[0];
         }
 
         /// <summary>
@@ -27,9 +27,13 @@ namespace PKHeX.Core.Enhancements
         public static void DownloadMGDBFromGitHub(string dest, bool entire)
         {
             if (entire)
+            {
                 DownloadEntireRepo(dest);
+            }
             else
+            {
                 DownloadRelease(dest);
+            }
         }
 
         private static void DownloadRelease(string dest)
@@ -56,7 +60,9 @@ namespace PKHeX.Core.Enhancements
             const string temp = "temp.zip";
 #pragma warning disable SYSLIB0014 // Type or member is obsolete
             using (WebClient client = new())
+            {
                 client.DownloadFile(new Uri(url), temp);
+            }
 #pragma warning restore SYSLIB0014 // Type or member is obsolete
 
             ZipFile.ExtractToDirectory(temp, dest);

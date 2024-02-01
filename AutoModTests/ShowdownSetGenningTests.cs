@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using PKHeX.Core;
 using PKHeX.Core.AutoMod;
+using System.Diagnostics;
 using Xunit;
 
 namespace AutoModTests
@@ -13,6 +14,7 @@ namespace AutoModTests
         [InlineData(GameVersion.US, Meowstic)]
         [InlineData(GameVersion.US, Darkrai)]
         [InlineData(GameVersion.B2, Genesect)]
+        [InlineData(GameVersion.SW, problemsolving)]
         public static void VerifyManually(GameVersion game, string txt)
         {
             var dev = APILegality.EnableDevMode;
@@ -25,15 +27,18 @@ namespace AutoModTests
             RecentTrainerCache.SetRecentTrainer(trainer);
 
             var set = new ShowdownSet(txt);
-            var pkm = sav.GetLegalFromSet(set, out _);
+            var almres = sav.GetLegalFromSet(set);
             APILegality.EnableDevMode = dev;
 
-            var la = new LegalityAnalysis(pkm);
+            var la = new LegalityAnalysis(almres.Created);
             la.Valid.Should().BeTrue();
         }
-
+        private const string problemsolving =
+            @"Stakataka
+IVs: 17 Def / 0 Spe
+Lonely Nature";
         private const string Darkrai =
-@"Darkrai
+            @"Darkrai
 IVs: 7 Atk
 Ability: Bad Dreams
 Shiny: Yes
@@ -44,7 +49,7 @@ Timid Nature
 - Double Team";
 
         private const string Genesect =
-@"Genesect
+            @"Genesect
 Ability: Download
 Shiny: Yes
 Hasty Nature
@@ -54,7 +59,7 @@ Hasty Nature
 - Shift Gear";
 
         private const string Meowstic =
-@"Meowstic-F @ Life Orb
+            @"Meowstic-F @ Life Orb
 Ability: Competitive
 EVs: 4 Def / 252 SpA / 252 Spe
 Timid Nature

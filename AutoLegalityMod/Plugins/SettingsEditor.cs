@@ -1,7 +1,7 @@
-﻿using System;
-using System.Windows.Forms;
-using AutoModPlugins.GUI;
+﻿using AutoModPlugins.GUI;
 using AutoModPlugins.Properties;
+using System;
+using System.Windows.Forms;
 
 namespace AutoModPlugins
 {
@@ -25,4 +25,3 @@ namespace AutoModPlugins
         }
     }
 }
-

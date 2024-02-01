@@ -20,13 +20,18 @@ namespace PKHeX.Core.Injection
         public void ChangeBox(int box)
         {
             if (!Bot.Connected)
+            {
                 return;
+            }
 
             var sav = SAV.SAV;
             if ((uint)box >= sav.BoxCount)
+            {
                 return;
+            }
 
             ReadBox(box);
+
         }
 
         public void ReadBox(int box)
@@ -66,7 +71,9 @@ namespace PKHeX.Core.Injection
 
             // Since data might not actually exist at the user-specified offset, double check that the pkm data is valid.
             if (!pkm.ChecksumValid)
+            {
                 return false;
+            }
 
             Editor.PopulateFields(pkm);
             return true;
@@ -74,15 +81,13 @@ namespace PKHeX.Core.Injection
 
         private byte[] ReadData(ulong offset, RWMethod method)
         {
-            if (Bot.com is not ICommunicatorNX nx)
-                return Bot.ReadOffset(offset);
-            return method switch
-            {
-                RWMethod.Heap => Bot.ReadOffset(offset),
-                RWMethod.Main => nx.ReadBytesMain(offset, Bot.SlotSize),
-                RWMethod.Absolute => nx.ReadBytesAbsolute(offset, Bot.SlotSize),
-                _ => Bot.ReadOffset(offset),
-            };
+            return Bot.com is not ICommunicatorNX nx ? Bot.ReadOffset(offset) : method switch
+                {
+                    RWMethod.Heap => Bot.ReadOffset(offset),
+                    RWMethod.Main => nx.ReadBytesMain(offset, Bot.SlotSize),
+                    RWMethod.Absolute => nx.ReadBytesAbsolute(offset, Bot.SlotSize),
+                    _ => Bot.ReadOffset(offset),
+                };
         }
 
         public byte[] ReadRAM(ulong offset, int size) => Bot.com.ReadBytes(offset, size);

@@ -38,9 +38,13 @@ namespace PKHeX.Core.AutoMod
 
                 any = true;
             }
+
             tr = sti;
             if (!any || (TID7 < 0 && SID7 < 0))
+            {
                 return any;
+            }
+
             TID7 = Math.Max(TID7, 0);
             SID7 = Math.Max(SID7, 0);
             const int mil = 1_000_000;
@@ -53,12 +57,26 @@ namespace PKHeX.Core.AutoMod
         private const char Splitter = ':';
         public const char EncounterFilterPrefix = '~';
 
-        public static IEnumerable<StringInstruction>? GetEncounterFilters(IEnumerable<string> lines)
+        public static IReadOnlyList<StringInstruction> GetEncounterFilters(IEnumerable<string> lines)
         {
-            var valid = lines.Where(z => z.StartsWith(EncounterFilterPrefix.ToString())).ToList();
-            if (valid.Count == 0)
-                return null;
-            var cleaned = valid.Select(z => z.TrimStart(EncounterFilterPrefix));
+            var valid = lines.Where(z => z.StartsWith(EncounterFilterPrefix.ToString()) && !z.Contains("Version")).ToList();
+            return CleanFilters(valid);
+        }
+
+        public static IReadOnlyList<StringInstruction> GetVersionFilters(IEnumerable<string> lines)
+        {
+            var valid = lines.Where(z => z.StartsWith(EncounterFilterPrefix.ToString()) && z.Contains("Version")).ToList();
+            return CleanFilters(valid);
+        }
+
+        private static StringInstruction[] CleanFilters(List<String> lines)
+        {
+            if (lines.Count == 0)
+            {
+                return [];
+            }
+
+            var cleaned = lines.Select(z => z.TrimStart(EncounterFilterPrefix));
             var filters = StringInstruction.GetFilters(cleaned).ToArray();
             BatchEditing.ScreenStrings(filters);
             return filters;
@@ -70,7 +88,9 @@ namespace PKHeX.Core.AutoMod
             {
                 var index = line.IndexOf(Splitter);
                 if (index < 0)
+                {
                     continue;
+                }
 
                 var key = line[..index];
                 var value = line.Substring(index + 1, line.Length - key.Length - 1).Trim();
@@ -88,8 +108,8 @@ namespace PKHeX.Core.AutoMod
             {
                 const int mil = 1_000_000;
                 uint repack = ((uint)sid << 16) + (uint)tid;
-                tid = (int)(repack % mil);
-                sid = (int)(repack / mil);
+                tid = (ushort)(repack % mil);
+                sid = (ushort)(repack / mil);
             }
 
             var result = new[]
@@ -106,9 +126,15 @@ namespace PKHeX.Core.AutoMod
         {
             var result = new List<string>();
             foreach (var s in set.Filters)
+            {
                 result.Add($"{StringInstruction.Prefixes[(int)s.Comparer]}{s.PropertyName}={s.PropertyValue}");
+            }
+
             foreach (var s in set.Instructions)
+            {
                 result.Add($".{s.PropertyName}={s.PropertyValue}");
+            }
+
             return string.Join(Environment.NewLine, result);
         }
 
@@ -116,7 +142,10 @@ namespace PKHeX.Core.AutoMod
         {
             var result = new List<string>();
             foreach (var s in filters)
+            {
                 result.Add($"{prefix}{StringInstruction.Prefixes[(int)s.Comparer]}{s.PropertyName}={s.PropertyValue}");
+            }
+
             return string.Join(Environment.NewLine, result);
         }
 
@@ -129,7 +158,9 @@ namespace PKHeX.Core.AutoMod
         public static ITrainerInfo MutateLanguage(this ITrainerInfo tr, LanguageID? lang, GameVersion ver)
         {
             if (lang is LanguageID.UNUSED_6 or LanguageID.Hacked or null)
+            {
                 return tr;
+            }
 
             if (tr is PokeTrainerDetails p)
             {
@@ -140,7 +171,7 @@ namespace PKHeX.Core.AutoMod
             }
             if (tr is SimpleTrainerInfo s)
             {
-                var version = Array.Find(GameUtil.GameVersions, z => ver.Contains(z) && z != GameVersion.BU);
+                var version = Array.Find(GameUtil.GameVersions,z => ver.Contains(z) && z != GameVersion.BU);
                 return new SimpleTrainerInfo(version)
                 {
                     OT = MutateOT(s.OT, lang, version),
@@ -148,6 +179,7 @@ namespace PKHeX.Core.AutoMod
                     SID16 = s.SID16,
                     Gender = s.Gender,
                     Language = (int)lang,
+                    Context = s.Context,
                     ConsoleRegion = s.ConsoleRegion != 0 ? s.ConsoleRegion : (byte)1,
                     Region = s.Region != 0 ? s.Region : (byte)7,
                     Country = s.Country != 0 ? s.Country : (byte)49,
@@ -160,24 +192,34 @@ namespace PKHeX.Core.AutoMod
         private static string MutateOT(string OT, LanguageID? lang, GameVersion game)
         {
             if (lang == null)
+            {
                 return OT;
+            }
+
             var max = Legal.GetMaxLengthOT(game.GetGeneration(), (LanguageID)lang);
             OT = OT[..Math.Min(OT.Length, max)];
             if (GameVersion.GG.Contains(game) || game.GetGeneration() >= 8) // switch keyboard only has latin characters, --don't mutate
+            {
                 return OT;
+            }
+
             var full = lang is LanguageID.Japanese or LanguageID.Korean or LanguageID.ChineseS or LanguageID.ChineseT;
             if (full && GlyphLegality.ContainsHalfWidth(OT))
+            {
                 return GlyphLegality.StringConvert(OT, StringConversionType.FullWidth);
-            if (!full && GlyphLegality.ContainsFullWidth(OT))
-                return GlyphLegality.StringConvert(OT, StringConversionType.HalfWidth);
-            return OT;
+            }
+
+            return !full && GlyphLegality.ContainsFullWidth(OT) ? GlyphLegality.StringConvert(OT, StringConversionType.HalfWidth) : OT;
         }
 
         public static string MutateNickname(string nick, LanguageID? lang, GameVersion game)
         {
             // Length checks are handled later in SetSpeciesLevel
             if (game.GetGeneration() >= 8 || lang == null)
+            {
                 return nick;
+            }
+
             var full = lang is LanguageID.Japanese or LanguageID.Korean or LanguageID.ChineseS or LanguageID.ChineseT;
             return full switch
             {
@@ -191,32 +233,32 @@ namespace PKHeX.Core.AutoMod
         {
             var pi = GameData.GetPersonal(GetGameVersionFromGen(gen))[species];
             var abils_ct = pi.AbilityCount;
-            if (pi is not IPersonalAbility12 a)
-                return -1;
-            return ar switch
-            {
-                AbilityRequest.Any => -1,
-                AbilityRequest.First => a.Ability1,
-                AbilityRequest.Second => a.Ability2,
-                AbilityRequest.NotHidden => a.Ability1,
-                AbilityRequest.PossiblyHidden => a.Ability1,
-                AbilityRequest.Hidden => abils_ct > 2 && pi is IPersonalAbility12H h ? h.AbilityH : -1,
-                _ => throw new Exception($"Invalid AbilityRequest: {ar}"),
-            };
+            return pi is not IPersonalAbility12 a ? -1 : ar switch
+                {
+                    AbilityRequest.Any => -1,
+                    AbilityRequest.First => a.Ability1,
+                    AbilityRequest.Second => a.Ability2,
+                    AbilityRequest.NotHidden => a.Ability1,
+                    AbilityRequest.PossiblyHidden => a.Ability1,
+                    AbilityRequest.Hidden
+                        => abils_ct > 2 && pi is IPersonalAbility12H h ? h.AbilityH : -1,
+                    _ => throw new Exception($"Invalid AbilityRequest: {ar}"),
+                };
         }
 
-        public static GameVersion GetGameVersionFromGen(int gen) => gen switch
-        {
-            1 => GameVersion.RB,
-            2 => GameVersion.C,
-            3 => GameVersion.E,
-            4 => GameVersion.Pt,
-            5 => GameVersion.B2W2,
-            6 => GameVersion.ORAS,
-            7 => GameVersion.USUM,
-            8 => GameVersion.SWSH,
-            9 => GameVersion.SV,
-            _ => throw new Exception($"Invalid generation: {gen}"),
-        };
+        public static GameVersion GetGameVersionFromGen(int gen) =>
+            gen switch
+            {
+                1 => GameVersion.RB,
+                2 => GameVersion.C,
+                3 => GameVersion.E,
+                4 => GameVersion.Pt,
+                5 => GameVersion.B2W2,
+                6 => GameVersion.ORAS,
+                7 => GameVersion.USUM,
+                8 => GameVersion.SWSH,
+                9 => GameVersion.SV,
+                _ => throw new Exception($"Invalid generation: {gen}"),
+            };
     }
 }
